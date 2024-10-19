@@ -22,7 +22,7 @@ Module["Video"] = class Video extends Module["Module"] {
 
 	// Fetch video information
 	fetchVideoInfo(fetchCallback) {
-		const url = `http://youtube.com/oembed?url=https://www.youtube.com/watch?v=${this.videoId}&format=json`;
+		const url = `https://youtube.com/oembed?url=https://www.youtube.com/watch?v=${this.videoId}&format=json`;
 
 		fetch(url)
 			.then((response) => response.json())
