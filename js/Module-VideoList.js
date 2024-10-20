@@ -88,6 +88,17 @@ Module["VideoList"] = class VideoList extends Module["Module"] {
                     border-color: #fff;
                 `;
 				target.innerHTML = summary;
+
+				// Delete this when long mousedown
+				target.addEventListener("mousedown", (e) => {
+					let timeout = setTimeout(() => {
+						if (this.modules.includes(module)) {
+							this.modules.splice(this.modules.indexOf(module), 1);
+							this.updateUI();
+						}
+					}, 400);
+				});
+
 				this.ui.content.appendChild(target);
 			}
 		}

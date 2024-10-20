@@ -13,8 +13,6 @@ var VideoManager = class {
 		this.playlistContainer = null;
 		this.player = null;
 
-		this.saveloadid = 17732;
-
 		// Video manager specific components
 		this.playlist = [];
 		this.initUI();
@@ -31,6 +29,9 @@ var VideoManager = class {
             overflow: hidden;
         `;
 
+		const playerWidth = 360;
+		const playerHeight = (playerWidth / 4) * 3;
+
 		// add blueprint at the top left
 		{
 			var blueprintContainer = document.createElement("div");
@@ -38,7 +39,7 @@ var VideoManager = class {
             position: absolute;
             top: 0;
             left: 0;
-            right: 640px;
+            right: ${playerWidth}px;
             bottom: 0;
             overflow: hidden;
         `;
@@ -51,7 +52,7 @@ var VideoManager = class {
 			resetButton.style = `
 				position: absolute;
 				top: 10px;
-				right: 650px;
+				right: ${playerWidth + 10}px;
 			`;
 			resetButton.addEventListener("click", () => {
 				this.resetModulePosition();
@@ -66,8 +67,8 @@ var VideoManager = class {
             position: absolute;
             top: 0;
             right: 0;
-            width: 640px;
-            bottom: 480px;
+            width: ${playerWidth}px;
+            bottom: ${playerHeight}px;
             overflow: auto;
             background: #333;
             color: white;
@@ -84,8 +85,8 @@ var VideoManager = class {
             position: absolute;
             bottom: 0;
             right: 0;
-            width: 640px;
-            height: 480px;
+            width: ${playerWidth}px;
+            height: ${playerHeight}px;
         `;
 			this.container.appendChild(playerContainer);
 		}
@@ -156,15 +157,7 @@ var VideoManager = class {
             color: white;
         `;
 
-			let input = document.createElement("input");
-			input.type = "text";
-			input.placeholder = "Enter YouTube video URL";
-			input.style = "width: 300px;";
-
-			let button = document.createElement("button");
-			button.innerText = "Add Video";
-			button.style = "margin-left: 10px;";
-			button.addEventListener("click", () => {
+			let submitFunc = () => {
 				let url = input.value;
 				let videoIds = this.extractVideoIds(url);
 				for (let videoId of videoIds) {
@@ -173,7 +166,22 @@ var VideoManager = class {
 				if (videoIds.length === 0) {
 					alert("No video found in the URL");
 				}
+			};
+
+			let input = document.createElement("input");
+			input.type = "text";
+			input.placeholder = "Enter YouTube video URL";
+			input.style = "width: 300px;";
+			input.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					submitFunc();
+				}
 			});
+
+			let button = document.createElement("button");
+			button.innerText = "Add Video";
+			button.style = "margin-left: 10px;";
+			button.addEventListener("click", submitFunc);
 
 			urlInputContainer.appendChild(input);
 			urlInputContainer.appendChild(button);
@@ -185,7 +193,7 @@ var VideoManager = class {
 			let nameInputContainer = document.createElement("div");
 			nameInputContainer.style = `
                 position: absolute;
-                bottom: 50px;
+                bottom: 10px;
                 left: 10px;
                 z-index: 10;
                 background: #333;
@@ -193,22 +201,72 @@ var VideoManager = class {
                 color: white;
             `;
 
+			let submitFunc = () => {
+				let name = input.value;
+				this.createVideoListModule(name);
+			};
+
 			let input = document.createElement("input");
 			input.type = "text";
 			input.placeholder = "Enter video list name";
 			input.style = "width: 300px;";
+			input.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					submitFunc();
+				}
+			});
 
 			let button = document.createElement("button");
 			button.innerText = "Create Video List";
 			button.style = "margin-left: 10px;";
-			button.addEventListener("click", () => {
-				let name = input.value;
-				this.createVideoListModule(name);
-			});
+			button.addEventListener("click", submitFunc);
 
 			nameInputContainer.appendChild(input);
 			nameInputContainer.appendChild(button);
 			document.body.appendChild(nameInputContainer);
+		}
+
+		// Create a simple guide with show/hide button
+		{
+			let guideContainer = document.createElement("div");
+			guideContainer.style = `
+				position: absolute;
+				bottom: 10px;
+				right: ${playerWidth + 10}px;
+				z-index: 10;
+				background: #333;
+				padding: 10px;
+				color: white;
+			`;
+
+			let guideText = document.createElement("div");
+			guideText.innerText = `- To add a Youtube playlist, enter the element of the YT playlist page with F12 which contains the video links
+- Drag and drop the videos, authors, playlists in playlist to insert them
+- Click on the sort button to reset the positions
+- Double Click on the video, author, video list to play it`;
+
+			let toggleButton = document.createElement("button");
+			toggleButton.innerText = "Hide";
+			toggleButton.style = `
+				position: absolute;
+				bottom: 10px;
+				right: ${playerWidth + 10}px;
+				z-index: 10;
+				margin-top: 10px;
+			`;
+			toggleButton.addEventListener("click", () => {
+				if (guideContainer.style.display === "none") {
+					guideContainer.style.display = "block";
+					toggleButton.innerText = "Hide";
+				} else {
+					guideContainer.style.display = "none";
+					toggleButton.innerText = "Show";
+				}
+			});
+
+			guideContainer.appendChild(guideText);
+			document.body.appendChild(guideContainer);
+			document.body.appendChild(toggleButton);
 		}
 	}
 
@@ -322,11 +380,17 @@ var VideoManager = class {
 		// clear all
 		this.blueprint.clear();
 
+		var mostLeft = 1e9;
+		var mostTop = 1e9;
+
 		// load authors since videos depend on them
 		for (let author of saveData.authors) {
 			let authorModule = this.blueprint.add_module("Author", author.name);
 			authorModule.ui.container.style.left = author.left;
 			authorModule.ui.container.style.top = author.top;
+
+			mostLeft = Math.min(mostLeft, parseInt(author.left, 10));
+			mostTop = Math.min(mostTop, parseInt(author.top, 10));
 		}
 
 		// load videos
@@ -334,6 +398,9 @@ var VideoManager = class {
 			let videoModule = this.addVideoModule(video.videoId);
 			videoModule.ui.container.style.left = video.left;
 			videoModule.ui.container.style.top = video.top;
+
+			mostLeft = Math.min(mostLeft, parseInt(video.left, 10));
+			mostTop = Math.min(mostTop, parseInt(video.top, 10));
 		}
 
 		// load video lists
@@ -342,7 +409,14 @@ var VideoManager = class {
 			videoListModule.ui.container.style.left = videoList.left;
 			videoListModule.ui.container.style.top = videoList.top;
 			videoListModule.set_data(videoList.list);
+
+			mostLeft = Math.min(mostLeft, parseInt(videoList.left, 10));
+			mostTop = Math.min(mostTop, parseInt(videoList.top, 10));
 		}
+
+		// reset blueprint positions
+		this.blueprint.ui.board.style.left = `${-mostLeft + 80}px`;
+		this.blueprint.ui.board.style.top = `${-mostTop + 100}px`;
 
 		return true;
 	}
@@ -377,6 +451,7 @@ var VideoManager = class {
 			songDiv.style = `
 				padding: 10px;
 				cursor: pointer;
+				border-bottom: 1px solid #666;
 			`;
 			songDiv.innerText = songModule.title;
 			songDiv.addEventListener("click", () => {
@@ -396,11 +471,19 @@ var VideoManager = class {
 			module.ui.container.style.left = "80px";
 			module.ui.container.style.top = `${finalY}px`;
 
+			let currentRight = 0;
+			let mostRight = 0;
 			module.songModules.forEach((songModule, index) => {
-				songModule.ui.container.style.left = "640px";
-				songModule.ui.container.style.top = `${finalY + index * 200}px`;
+				if (index % 5 == 0) {
+					currentRight = mostRight + 20;
+				}
+
+				songModule.ui.container.style.left = `${640 + currentRight}px`;
+				songModule.ui.container.style.top = `${finalY + (index % 5) * 180}px`;
+				let rect = songModule.ui.container.getBoundingClientRect();
+				mostRight = Math.max(mostRight, rect.left + rect.width - 640);
 			});
-			finalY += 200 * module.songModules.length;
+			finalY += 180 * Math.min(module.songModules.length, 5);
 		});
 
 		finalY += 200;

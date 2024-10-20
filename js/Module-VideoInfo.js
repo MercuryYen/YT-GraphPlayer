@@ -45,17 +45,6 @@ Module["Video"] = class Video extends Module["Module"] {
 					}
 					this.authorModule.songModules.push(this);
 
-					// Try to create provider module only if it is not youtube
-					// if (data.provider_name !== "YouTube") {
-					// 	let providerModules = this.blueprint.get_modules("Provider");
-					// 	let providerModule = providerModules.find((module) => module.provider === data.provider_name);
-					// 	if (providerModule) {
-					// 		providerModule.name = data.provider_name;
-					// 	} else {
-					// 		this.blueprint.add_module("Provider", data.provider_name);
-					// 	}
-					// }
-
 					this.updateUI();
 				} else {
 					console.error("No video found");

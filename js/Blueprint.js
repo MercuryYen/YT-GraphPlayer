@@ -130,11 +130,11 @@ var Blueprint = class {
 		this.ui.container.appendChild(this.ui.wires);
 
 		// update loop
-		var update_loop = function () {
-			this.update_wires();
-			requestAnimationFrame(update_loop);
-		}.bind(this);
-		update_loop();
+		// var update_loop = function () {
+		// 	this.update_wires();
+		// 	requestAnimationFrame(update_loop);
+		// }.bind(this);
+		// update_loop();
 
 		// editor
 		// this.editor = new Editor(this);
