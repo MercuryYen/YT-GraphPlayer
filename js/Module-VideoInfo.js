@@ -4,7 +4,7 @@
 
 // video
 Module["Video"] = class Video extends Module["Module"] {
-	constructor(videoId = null, fetchCallback = null, blueprint = null) {
+	constructor(videoId = null, blueprint = null) {
 		super("Video", blueprint);
 		this.hasOutput = false;
 		this.hasBranchIn = false;
@@ -12,23 +12,26 @@ Module["Video"] = class Video extends Module["Module"] {
 		this.videoId = videoId;
 		this.author = null;
 		this.authorModule = null;
-		this.fetchVideoInfo(fetchCallback);
+		this.preparePromise = this.fetchVideoInfo();
 	}
 
 	createUI() {
 		super.createUI();
+		this.ui.head.innerText = "\xa0\xa0" + this.title + "\xa0\xa0";
 		this.ui.content.innerHTML = `<img src="https://img.youtube.com/vi/${this.videoId}/hqdefault.jpg" height="120" style="pointer-events: none;">`;
 	}
 
 	// Fetch video information
-	fetchVideoInfo(fetchCallback) {
+	fetchVideoInfo() {
 		const url = `https://youtube.com/oembed?url=https://www.youtube.com/watch?v=${this.videoId}&format=json`;
 
-		fetch(url)
+		const thisModule = this;
+
+		return fetch(url)
 			.then((response) => response.json())
 			.then((data) => {
 				if (data?.title && data?.author_name) {
-					this.name = data.title;
+					this.title = data.title;
 					this.author = data.author_name;
 
 					// Try to create author module
@@ -58,12 +61,11 @@ Module["Video"] = class Video extends Module["Module"] {
 					console.error("No video found");
 				}
 			})
-			.then(() => {
-				if (fetchCallback) {
-					fetchCallback();
-				}
-			})
 			.catch((error) => console.error("Error fetching video info:", error));
+	}
+
+	get_args() {
+		return [this.videoId];
 	}
 
 	getSummary() {
@@ -80,6 +82,10 @@ Module["Author"] = class Author extends Module["Module"] {
 		this.songModules = [];
 
 		this.author = author;
+	}
+
+	get_args() {
+		return [this.author];
 	}
 
 	createUI() {

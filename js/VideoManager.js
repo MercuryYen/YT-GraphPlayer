@@ -10,8 +10,10 @@ var VideoManager = class {
 		this.songList = [];
 		this.nowIndex = 0;
 
-		this.songListContainer = null;
+		this.playlistContainer = null;
 		this.player = null;
+
+		this.saveloadid = 17732;
 
 		// Video manager specific components
 		this.playlist = [];
@@ -29,8 +31,10 @@ var VideoManager = class {
             overflow: hidden;
         `;
 
-		var blueprintContainer = document.createElement("div");
-		blueprintContainer.style = `
+		// add blueprint at the top left
+		{
+			var blueprintContainer = document.createElement("div");
+			blueprintContainer.style = `
             position: absolute;
             top: 0;
             left: 0;
@@ -38,11 +42,27 @@ var VideoManager = class {
             bottom: 0;
             overflow: hidden;
         `;
-		blueprintContainer.appendChild(this.blueprint.ui.container);
-		this.container.appendChild(blueprintContainer);
+			blueprintContainer.appendChild(this.blueprint.ui.container);
+			this.container.appendChild(blueprintContainer);
 
-		this.songListContainer = document.createElement("div");
-		this.songListContainer.style = `
+			// add reset button at the top right
+			var resetButton = document.createElement("button");
+			resetButton.innerText = "Sort";
+			resetButton.style = `
+				position: absolute;
+				top: 10px;
+				right: 650px;
+			`;
+			resetButton.addEventListener("click", () => {
+				this.resetModulePosition();
+			});
+			document.body.appendChild(resetButton);
+		}
+
+		// add playlist at the top right
+		{
+			this.playlistContainer = document.createElement("div");
+			this.playlistContainer.style = `
             position: absolute;
             top: 0;
             right: 0;
@@ -52,27 +72,83 @@ var VideoManager = class {
             background: #333;
             color: white;
         `;
-		this.container.appendChild(this.songListContainer);
+			this.container.appendChild(this.playlistContainer);
+		}
 
 		// add video player at the bottom right
-		this.player = new YTPlayer(this.nextSong.bind(this));
-		let playerContainer = document.createElement("div");
-		playerContainer.id = "player";
-		playerContainer.style = `
+		{
+			this.player = new YTPlayer(this.nextSong.bind(this));
+			let playerContainer = document.createElement("div");
+			playerContainer.id = "player";
+			playerContainer.style = `
             position: absolute;
             bottom: 0;
             right: 0;
             width: 640px;
             height: 480px;
         `;
-		this.container.appendChild(playerContainer);
+			this.container.appendChild(playerContainer);
+		}
+
+		// add Save Load button at the top left
+		{
+			let saveButton = document.createElement("button");
+			saveButton.innerText = "Save";
+			saveButton.style = `
+			position: absolute;
+			top: 10px;
+			left: 10px;
+		`;
+			saveButton.addEventListener("click", () => {
+				let saveStr = this.save();
+				window
+					.showSaveFilePicker({
+						types: [
+							{
+								description: "Text file",
+								accept: { "text/plain": [".json"] },
+							},
+						],
+					})
+					.then((fileHandle) => {
+						return fileHandle.createWritable();
+					})
+					.then((writable) => {
+						return Promise.all([writable.write(saveStr), writable.close()]);
+					});
+			});
+			document.body.appendChild(saveButton);
+
+			let loadButton = document.createElement("button");
+			loadButton.innerText = "Load";
+			loadButton.style = `
+			position: absolute;
+			top: 10px;
+			left: 60px;
+		`;
+			loadButton.addEventListener("click", () => {
+				window
+					.showOpenFilePicker({
+						description: "Text file",
+						accept: { "text/plain": [".json"] },
+					})
+					.then(([fileHandle]) => {
+						return fileHandle.getFile().then((file) => {
+							return file.text().then((text) => {
+								this.load(text);
+							});
+						});
+					});
+			});
+			document.body.appendChild(loadButton);
+		}
 
 		// Create a textbox and button for adding YouTube videos
 		{
 			let urlInputContainer = document.createElement("div");
 			urlInputContainer.style = `
             position: absolute;
-            top: 10px;
+            top: 40px;
             left: 10px;
             z-index: 10;
             background: #333;
@@ -90,11 +166,12 @@ var VideoManager = class {
 			button.style = "margin-left: 10px;";
 			button.addEventListener("click", () => {
 				let url = input.value;
-				let videoId = this.extractVideoId(url);
-				if (videoId) {
+				let videoIds = this.extractVideoIds(url);
+				for (let videoId of videoIds) {
 					this.addVideoModule(videoId);
-				} else {
-					alert("Invalid YouTube URL");
+				}
+				if (videoIds.length === 0) {
+					alert("No video found in the URL");
 				}
 			});
 
@@ -135,23 +212,30 @@ var VideoManager = class {
 		}
 	}
 
-	extractVideoId(url) {
+	extractVideoIds(url) {
 		const regex = /[\?&]v=([^&#]*)/;
-		const match = url.match(regex);
-		return match ? match[1] : null;
+
+		var ids = [];
+		var match = url.match(regex);
+		while (match) {
+			ids.push(match[1]);
+			url = url.slice(match.index + match[0].length);
+			match = url.match(regex);
+		}
+		return ids;
 	}
 
 	addVideoModule(videoId) {
 		// Check if the video is already in the pool
-		let videoModule = this.blueprint.get_modules("Video").find((module) => module.videoId === videoId);
-		if (videoModule) {
-			return;
-		} else {
-			var module = this.blueprint.add_module("Video", videoId, () => {
+		let module = this.blueprint.get_modules("Video").find((module) => module.videoId === videoId);
+		if (!module) {
+			module = this.blueprint.add_module("Video", videoId);
+
+			module.preparePromise.then(() => {
 				if (module.authorModule.songModules.length === 1) {
 					module.authorModule.waiting = false;
 					module.authorModule.ui.container.addEventListener("mousedown", () => {
-						if (module.authorModule.waiting.waiting) {
+						if (module.authorModule.waiting) {
 							this.playModule(module.authorModule);
 						}
 
@@ -161,29 +245,28 @@ var VideoManager = class {
 						}, 400);
 					});
 				}
-			});
 
-			module.waiting = false;
-			module.ui.container.addEventListener("mousedown", () => {
-				if (module.waiting) {
-					this.playModule(module);
-				}
+				module.waiting = false;
+				module.ui.container.addEventListener("mousedown", () => {
+					if (module.waiting) {
+						this.playModule(module);
+					}
 
-				module.waiting = true;
-				setTimeout(() => {
-					module.waiting = false;
-				}, 400);
+					module.waiting = true;
+					setTimeout(() => {
+						module.waiting = false;
+					}, 400);
+				});
 			});
 		}
+		return module;
 	}
 
 	createVideoListModule(title) {
 		// Check if the video is already in the pool
-		let videoListModule = this.blueprint.get_modules("VideoList").find((module) => module.title === title);
-		if (videoListModule) {
-			return;
-		} else {
-			var module = this.blueprint.add_module("VideoList", title);
+		let module = this.blueprint.get_modules("VideoList").find((module) => module.title === title);
+		if (!module) {
+			module = this.blueprint.add_module("VideoList", title);
 			module.waiting = false;
 			module.ui.container.addEventListener("mousedown", () => {
 				if (module.waiting) {
@@ -196,6 +279,72 @@ var VideoManager = class {
 				}, 400);
 			});
 		}
+		return module;
+	}
+
+	save() {
+		// data
+		var saveData = {
+			videos: [],
+			authors: [],
+			videoLists: [],
+		};
+
+		for (let module of this.blueprint.modules) {
+			if (module instanceof Module["Video"]) {
+				saveData.videos.push({
+					videoId: module.videoId,
+					left: module.ui.container.style.left,
+					top: module.ui.container.style.top,
+				});
+			} else if (module instanceof Module["Author"]) {
+				saveData.authors.push({
+					name: module.author,
+					left: module.ui.container.style.left,
+					top: module.ui.container.style.top,
+				});
+			} else if (module instanceof Module["VideoList"]) {
+				saveData.videoLists.push({
+					title: module.title,
+					list: module.get_data(),
+					left: module.ui.container.style.left,
+					top: module.ui.container.style.top,
+				});
+			}
+		}
+		return JSON.stringify(saveData);
+	}
+
+	load(json) {
+		// data
+		var saveData = JSON.parse(json);
+
+		// clear all
+		this.blueprint.clear();
+
+		// load authors since videos depend on them
+		for (let author of saveData.authors) {
+			let authorModule = this.blueprint.add_module("Author", author.name);
+			authorModule.ui.container.style.left = author.left;
+			authorModule.ui.container.style.top = author.top;
+		}
+
+		// load videos
+		for (let video of saveData.videos) {
+			let videoModule = this.addVideoModule(video.videoId);
+			videoModule.ui.container.style.left = video.left;
+			videoModule.ui.container.style.top = video.top;
+		}
+
+		// load video lists
+		for (let videoList of saveData.videoLists) {
+			let videoListModule = this.createVideoListModule(videoList.title);
+			videoListModule.ui.container.style.left = videoList.left;
+			videoListModule.ui.container.style.top = videoList.top;
+			videoListModule.set_data(videoList.list);
+		}
+
+		return true;
 	}
 
 	playModule(module, index = 0) {
@@ -203,14 +352,62 @@ var VideoManager = class {
 		console.log(module);
 		this.nowIndex = index;
 		if (module instanceof Module["Video"]) {
+			this.playlist = [module];
 			this.player.load(module.videoId);
 		} else if (module instanceof Module["Author"]) {
 			this.playlist = module.songModules;
 			this.player.load(this.playlist[index].videoId);
 		} else if (module instanceof Module["VideoList"]) {
-			this.playlist = module.modules;
-			this.player.load(this.playlist[index].videoId);
+			this.playlist = module.getPlaylist();
+			if (this.playlist.length > 0) {
+				this.player.load(this.playlist[index].videoId);
+			}
 		}
+		this.refreshPlayList();
+	}
+
+	refreshPlayList() {
+		while (this.playlistContainer.lastElementChild) {
+			this.playlistContainer.removeChild(this.playlistContainer.lastElementChild);
+		}
+
+		this.playlist.forEach((songModule, index) => {
+			let songDiv = document.createElement("div");
+			songDiv.songIndex = index;
+			songDiv.style = `
+				padding: 10px;
+				cursor: pointer;
+			`;
+			songDiv.innerText = songModule.title;
+			songDiv.addEventListener("click", () => {
+				this.nowIndex = songDiv.songIndex;
+				this.player.load(songModule.videoId);
+			});
+			this.playlistContainer.appendChild(songDiv);
+		});
+	}
+
+	resetModulePosition() {
+		this.blueprint.ui.board.style.left = "0px";
+		this.blueprint.ui.board.style.top = "0px";
+
+		let finalY = 100;
+		this.blueprint.get_modules("Author").forEach((module, index) => {
+			module.ui.container.style.left = "80px";
+			module.ui.container.style.top = `${finalY}px`;
+
+			module.songModules.forEach((songModule, index) => {
+				songModule.ui.container.style.left = "640px";
+				songModule.ui.container.style.top = `${finalY + index * 200}px`;
+			});
+			finalY += 200 * module.songModules.length;
+		});
+
+		finalY += 200;
+		this.blueprint.get_modules("VideoList").forEach((module, index) => {
+			module.ui.container.style.left = "80px";
+			module.ui.container.style.top = `${finalY + index * 200}px`;
+		});
 	}
 
 	nextSong() {
@@ -220,6 +417,7 @@ var VideoManager = class {
 		}
 	}
 };
+
 var videoManager = null;
 
 window.onload = function () {

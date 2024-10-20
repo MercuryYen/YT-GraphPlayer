@@ -180,12 +180,18 @@ Module["Module"] = class {
 				y: parseFloat(container.style.top.substr(0, container.style.top.length - 2)),
 			};
 			return function (e) {
-				if (type == "mouse") {
-					container.style.left = origin.x + e.clientX - pivotX + "px";
-					container.style.top = origin.y + e.clientY - pivotY + "px";
-				} else if (type == "touch") {
-					container.style.left = origin.x + e.touches[0].clientX - pivotX + "px";
-					container.style.top = origin.y + e.touches[0].clientY - pivotY + "px";
+				if (!e) {
+					// reset position
+					container.style.left = origin.x + "px";
+					container.style.top = origin.y + "px";
+				} else {
+					if (type == "mouse") {
+						container.style.left = origin.x + e.clientX - pivotX + "px";
+						container.style.top = origin.y + e.clientY - pivotY + "px";
+					} else if (type == "touch") {
+						container.style.left = origin.x + e.touches[0].clientX - pivotX + "px";
+						container.style.top = origin.y + e.touches[0].clientY - pivotY + "px";
+					}
 				}
 			};
 		};
@@ -212,6 +218,9 @@ Module["Module"] = class {
 			"mouseup",
 			function (e) {
 				container.style.pointerEvents = "auto";
+				if (container.dragMethod && blueprint.currentHoverModules.length > 0) {
+					container.dragMethod(null);
+				}
 				window.removeEventListener("mousemove", container.dragMethod);
 				container.dragMethod = null;
 				if (blueprint.currentModule == thisModule) {
@@ -240,6 +249,9 @@ Module["Module"] = class {
 			"touchup",
 			function (e) {
 				container.style.pointerEvents = "auto";
+				if (container.dragMethod && blueprint.currentHoverModules.length > 0) {
+					container.dragMethod(null);
+				}
 				window.removeEventListener("touchmove", container.dragMethod);
 				container.dragMethod = null;
 				if (blueprint.currentModule == thisModule) {
@@ -339,9 +351,19 @@ Module["Module"] = class {
 		};
 	}
 
+	// get args
+	get_args() {
+		return [];
+	}
+
 	// get data
 	get_data() {
 		return [];
+	}
+
+	// set data
+	set_data(data) {
+		return;
 	}
 
 	// ui

@@ -10,15 +10,7 @@ var Blueprint = class {
 		// modules
 		this.modules = [];
 		this.currentModule = null;
-
-		// variables
-		this.variables = [];
-
-		// loop complexity count
-		this.loopComplexityCount = 0;
-
-		//virtual blueprint
-		this.virtualBlueprint = null;
+		this.currentHoverModules = [];
 
 		// ui
 		this.ui = {
@@ -334,14 +326,14 @@ var Blueprint = class {
 
 	delete_module(module) {
 		// unwire
-		this.modules.forEach(function (m) {
-			for (let i = 0; i < m.inputs.length; i++) {
-				if (m.inputs[i].module == module) m.disconnect("io", i);
-			}
-			for (let i = 0; i < m.branchOuts.length; i++) {
-				if (m.branchOuts[i].module == module) m.disconnect("branch", i);
-			}
-		});
+		// this.modules.forEach(function (m) {
+		// 	for (let i = 0; i < m.inputs.length; i++) {
+		// 		if (m.inputs[i].module == module) m.disconnect("io", i);
+		// 	}
+		// 	for (let i = 0; i < m.branchOuts.length; i++) {
+		// 		if (m.branchOuts[i].module == module) m.disconnect("branch", i);
+		// 	}
+		// });
 
 		// UI
 		module.removeUI();
@@ -353,46 +345,10 @@ var Blueprint = class {
 		});
 	}
 
-	add_variable(name, type) {
-		// create variable
-		var variable = new Variable(name, type);
-
-		// check validity
-		while (
-			this.variables.filter(function (v) {
-				return v.hash == variable.hash;
-			}).length > 0
-		) {
-			variable.hash = Math.floor(Math.random() * 1000000);
-		}
-
-		// store variable
-		this.variables.push(variable);
-
-		return variable;
-	}
-
-	delete_variable(variable) {
-		this.modules.forEach(
-			function (module) {
-				if (module.name == "get " + variable.name) this.delete_module(module);
-				if (module.name == "set " + variable.name) this.delete_module(module);
-			}.bind(this)
-		);
-		this.variables = this.variables.filter(function (value) {
-			return value != variable;
-		});
-	}
-
 	clear() {
 		this.modules.forEach(
 			function (module) {
 				this.delete_module(module);
-			}.bind(this)
-		);
-		this.variables.forEach(
-			function (variable) {
-				this.delete_variable(variable);
 			}.bind(this)
 		);
 	}
@@ -477,112 +433,98 @@ var Blueprint = class {
 	}
 
 	clear() {
-		// variables
-		this.variables = [];
-
 		// modules
 		for (let module of this.modules) {
 			this.delete_module(module);
 		}
 	}
 
-	save(commitStorage = false) {
-		// data
-		var saveData = {
-			variables: [],
-			modules: [],
-		};
+	// save(commitStorage = false) {
+	// 	// data
+	// 	var saveData = {
+	// 		modules: [],
+	// 	};
 
-		// variables
-		saveData.variables = this.variables;
+	// 	// modules
+	// 	for (let module of this.modules) {
+	// 		let data = {
+	// 			name: module.constructor.name,
+	// 			position: {
+	// 				top: module.ui.container.style.top,
+	// 				left: module.ui.container.style.left,
+	// 			},
+	// 			args: module.get_args(),
+	// 			data: module.get_data(),
+	// 		};
+	// 		// io wiring
+	// 		// for (let input of module.inputs) {
+	// 		// 	data.inputs.push(this.modules.indexOf(input.module));
+	// 		// }
+	// 		// branch wiring
+	// 		// for (let branchOut of module.branchOuts) {
+	// 		// 	data.branchOuts.push(this.modules.indexOf(branchOut.module));
+	// 		// }
+	// 		saveData.modules.push(data);
+	// 	}
 
-		// modules
-		for (let module of this.modules) {
-			let data = {
-				name: module.constructor.name,
-				inputs: [],
-				branchOuts: [],
-				breakpoint: module.breakpoint,
-				position: {
-					top: module.ui.container.style.top,
-					left: module.ui.container.style.left,
-				},
-				args: module.get_data(),
-			};
-			// io wiring
-			for (let input of module.inputs) {
-				data.inputs.push(this.modules.indexOf(input.module));
-			}
-			// branch wiring
-			for (let branchOut of module.branchOuts) {
-				data.branchOuts.push(this.modules.indexOf(branchOut.module));
-			}
-			saveData.modules.push(data);
-		}
+	// 	// store json in local storage
+	// 	if (commitStorage) {
+	// 		let blueprints = localStorage.getItem("blueprints");
+	// 		if (blueprints == null) {
+	// 			blueprints = [];
+	// 		} else {
+	// 			blueprints = JSON.parse(blueprints);
+	// 		}
+	// 		blueprints.push({
+	// 			date: new Date(),
+	// 			saveData: saveData,
+	// 		});
+	// 		localStorage.setItem("blueprints", JSON.stringify(blueprints));
+	// 	}
 
-		// store json in local storage
-		if (commitStorage) {
-			let blueprints = localStorage.getItem("blueprints");
-			if (blueprints == null) {
-				blueprints = [];
-			} else {
-				blueprints = JSON.parse(blueprints);
-			}
-			blueprints.push({
-				date: new Date(),
-				saveData: saveData,
-			});
-			localStorage.setItem("blueprints", JSON.stringify(blueprints));
-		}
+	// 	// return json
+	// 	return JSON.stringify(saveData);
+	// }
 
-		// return json
-		return JSON.stringify(saveData);
-	}
+	// load(json) {
+	// 	// data
+	// 	var saveData = JSON.parse(json);
 
-	load(json) {
-		// data
-		var saveData = JSON.parse(json);
+	// 	// clear all
+	// 	this.clear();
 
-		// clear all
-		this.clear();
+	// 	// modules
+	// 	var modules = [];
+	// 	for (let data of saveData.modules) {
+	// 		// create module
+	// 		let module = this.add_module(data.name, ...data.args);
+	// 		module.set_data(data.data);
+	// 		module.updateUI();
+	// 		modules.push(module);
+	// 		// position module
+	// 		module.ui.container.style.top = data.position.top;
+	// 		module.ui.container.style.left = data.position.left;
+	// 	}
 
-		// variables
-		this.variables = saveData.variables;
+	// 	// wiring
+	// 	// for (let i = 0; i < modules.length; i++) {
+	// 	// 	// io wiring
+	// 	// 	for (let j = 0; j < saveData.modules[i].inputs.length; j++) {
+	// 	// 		if (modules[saveData.modules[i].inputs[j]] == undefined) continue;
+	// 	// 		modules[saveData.modules[i].inputs[j]].connect("io", modules[i], j);
+	// 	// 	}
+	// 	// 	// branch wiring
+	// 	// 	for (let j = 0; j < saveData.modules[i].branchOuts.length; j++) {
+	// 	// 		if (modules[saveData.modules[i].branchOuts[j]] == undefined) continue;
+	// 	// 		modules[i].connect("branch", modules[saveData.modules[i].branchOuts[j]], j);
+	// 	// 	}
+	// 	// }
 
-		// modules
-		var modules = [];
-		for (let data of saveData.modules) {
-			// create module
-			let module = this.add_module(data.name, ...data.args);
-			if (data.breakpoint) {
-				module.breakpoint = data.breakpoint;
-				module.updateUI();
-			}
-			modules.push(module);
-			// position module
-			module.ui.container.style.top = data.position.top;
-			module.ui.container.style.left = data.position.left;
-		}
+	// 	// update editor UI
+	// 	// this.editor.updateUI();
 
-		// wiring
-		for (let i = 0; i < modules.length; i++) {
-			// io wiring
-			for (let j = 0; j < saveData.modules[i].inputs.length; j++) {
-				if (modules[saveData.modules[i].inputs[j]] == undefined) continue;
-				modules[saveData.modules[i].inputs[j]].connect("io", modules[i], j);
-			}
-			// branch wiring
-			for (let j = 0; j < saveData.modules[i].branchOuts.length; j++) {
-				if (modules[saveData.modules[i].branchOuts[j]] == undefined) continue;
-				modules[i].connect("branch", modules[saveData.modules[i].branchOuts[j]], j);
-			}
-		}
-
-		// update editor UI
-		// this.editor.updateUI();
-
-		return true;
-	}
+	// 	return true;
+	// }
 
 	list() {
 		let blueprint = this;
