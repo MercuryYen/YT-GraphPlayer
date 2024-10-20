@@ -102,45 +102,40 @@ var VideoManager = class {
 		`;
 			saveButton.addEventListener("click", () => {
 				let saveStr = this.save();
-				window
-					.showSaveFilePicker({
-						types: [
-							{
-								description: "Text file",
-								accept: { "text/plain": [".json"] },
-							},
-						],
-					})
-					.then((fileHandle) => {
-						return fileHandle.createWritable();
-					})
-					.then((writable) => {
-						return Promise.all([writable.write(saveStr), writable.close()]);
-					});
+				var element = document.createElement("a");
+				element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(saveStr));
+				element.setAttribute("download", "PlayGraph.json");
+
+				element.style.display = "none";
+				document.body.appendChild(element);
+
+				element.click();
+
+				document.body.removeChild(element);
 			});
 			document.body.appendChild(saveButton);
 
-			let loadButton = document.createElement("button");
-			loadButton.innerText = "Load";
+			let loadButton = document.createElement("form");
+			loadButton.action = "/action_page.php";
 			loadButton.style = `
-			position: absolute;
-			top: 10px;
-			left: 60px;
-		`;
-			loadButton.addEventListener("click", () => {
-				window
-					.showOpenFilePicker({
-						description: "Text file",
-						accept: { "text/plain": [".json"] },
-					})
-					.then(([fileHandle]) => {
-						return fileHandle.getFile().then((file) => {
-							return file.text().then((text) => {
-								this.load(text);
-							});
-						});
-					});
+				position: absolute;
+				top: 10px;
+				left: 60px;
+			`;
+
+			let fileInput = document.createElement("input");
+			fileInput.type = "file";
+			fileInput.id = "myFile";
+			fileInput.name = "filename";
+			fileInput.addEventListener("change", (e) => {
+				var file = fileInput.files[0];
+				var reader = new FileReader();
+				reader.onload = function (e) {
+					videoManager.load(e.target.result);
+				};
+				reader.readAsText(file);
 			});
+			loadButton.appendChild(fileInput);
 			document.body.appendChild(loadButton);
 		}
 
