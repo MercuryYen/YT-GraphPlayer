@@ -547,7 +547,7 @@ Module["Module"] = class {
 	}
 
 	getSummary() {
-		return "";
+		return null;
 	}
 
 	showOutput(text) {

@@ -390,16 +390,10 @@ var VideoManager = class {
 			videoLists[module.title] = index;
 		});
 
-		console.log(videos);
-		console.log(authors);
-
-		console.log("Start video list");
 		for (let module of this.blueprint.get_modules("VideoList")) {
-			console.log(module.title);
 			result += `l`;
 
 			for (let data of module.get_data()) {
-				console.log(data);
 				if (data.name === "Video") {
 					result += `v${num2str(videos[data.videoId])}`;
 				} else if (data.name === "Author") {

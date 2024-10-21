@@ -73,7 +73,7 @@ Module["VideoList"] = class VideoList extends Module["Module"] {
 
 		for (let module of this.modules) {
 			const summary = module.getSummary();
-			if (summary) {
+			if (summary !== null) {
 				const target = document.createElement("div");
 				target.style = `
                     height: 94px;
@@ -91,12 +91,12 @@ Module["VideoList"] = class VideoList extends Module["Module"] {
 
 				// Delete this when long mousedown
 				target.addEventListener("mousedown", (e) => {
-					let timeout = setTimeout(() => {
+					e.stopPropagation();
+					if (confirm("Delete this module?"))
 						if (this.modules.includes(module)) {
 							this.modules.splice(this.modules.indexOf(module), 1);
 							this.updateUI();
 						}
-					}, 400);
 				});
 
 				this.ui.content.appendChild(target);
