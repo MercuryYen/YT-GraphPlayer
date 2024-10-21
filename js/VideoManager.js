@@ -319,7 +319,7 @@ var VideoManager = class {
 						module.authorModule.waiting = true;
 						setTimeout(() => {
 							module.authorModule.waiting = false;
-						}, 400);
+						}, 600);
 					});
 				}
 
@@ -332,7 +332,7 @@ var VideoManager = class {
 					module.waiting = true;
 					setTimeout(() => {
 						module.waiting = false;
-					}, 400);
+					}, 600);
 				});
 			});
 		}
@@ -353,7 +353,7 @@ var VideoManager = class {
 				module.waiting = true;
 				setTimeout(() => {
 					module.waiting = false;
-				}, 400);
+				}, 600);
 			});
 		}
 		return module;
