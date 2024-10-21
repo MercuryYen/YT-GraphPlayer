@@ -39,12 +39,14 @@ var Blueprint = class {
 
 		// board
 		this.ui.board = document.createElement("div");
+		this.ui.board.scale = 1;
 		this.ui.board.style = `
         position: absolute;
         top: 0px;
         left: 0px;
         width: 99999px;
         height: 99999px;
+		zoom: 1;
         `;
 		// Issue: if module exists on the outer-right side of the board, then wrapping will occur on the
 		// module UI. Setting the width and height to 99999px is just a quick fix and shouldn't be final.
@@ -71,44 +73,61 @@ var Blueprint = class {
 				}
 			};
 		};
-		this.ui.container.addEventListener(
-			"mousedown",
-			function (e) {
-				if (container.dragMethod == null) {
-					container.dragMethod = this.createDragMethod("mouse", window.cursor.x, window.cursor.y);
-					window.addEventListener("mousemove", container.dragMethod);
+
+		// drag events
+		{
+			this.ui.container.addEventListener(
+				"mousedown",
+				function (e) {
+					if (container.dragMethod == null) {
+						container.dragMethod = this.createDragMethod("mouse", window.cursor.x, window.cursor.y);
+						window.addEventListener("mousemove", container.dragMethod);
+					}
+					e.stopPropagation();
+				},
+				false
+			);
+			window.addEventListener(
+				"mouseup",
+				function (e) {
+					window.removeEventListener("mousemove", container.dragMethod);
+					container.dragMethod = null;
+				},
+				false
+			);
+			this.ui.container.addEventListener(
+				"touchdown",
+				function (e) {
+					if (container.dragMethod == null) {
+						container.dragMethod = this.createDragMethod("touch", window.cursor.x, window.cursor.y);
+						window.addEventListener("touchmove", container.dragMethod);
+					}
+					e.stopPropagation();
+				},
+				false
+			);
+			window.addEventListener(
+				"touchup",
+				function (e) {
+					window.removeEventListener("touchmove", container.dragMethod);
+					container.dragMethod = null;
+				},
+				false
+			);
+		}
+
+		// scale events
+		{
+			this.ui.container.addEventListener("wheel", function (e) {
+				e.preventDefault();
+				if (e.deltaY < 0) {
+					board.scale = board.scale * 1.1;
+				} else {
+					board.scale = board.scale / 1.1;
 				}
-				e.stopPropagation();
-			},
-			false
-		);
-		window.addEventListener(
-			"mouseup",
-			function (e) {
-				window.removeEventListener("mousemove", container.dragMethod);
-				container.dragMethod = null;
-			},
-			false
-		);
-		this.ui.container.addEventListener(
-			"touchdown",
-			function (e) {
-				if (container.dragMethod == null) {
-					container.dragMethod = this.createDragMethod("touch", window.cursor.x, window.cursor.y);
-					window.addEventListener("touchmove", container.dragMethod);
-				}
-				e.stopPropagation();
-			},
-			false
-		);
-		window.addEventListener(
-			"touchup",
-			function (e) {
-				window.removeEventListener("touchmove", container.dragMethod);
-				container.dragMethod = null;
-			},
-			false
-		);
+				board.style.zoom = board.scale;
+			});
+		}
 
 		// wires
 		this.ui.wires = document.createElement("canvas");

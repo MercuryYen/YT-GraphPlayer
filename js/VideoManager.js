@@ -15,6 +15,9 @@ var VideoManager = class {
 
 		// Video manager specific components
 		this.playlist = [];
+
+		this.playerWidth = 360;
+		this.playerHeight = (this.playerWidth / 4) * 3;
 		this.initUI();
 
 		// check if the URL contains information
@@ -34,22 +37,64 @@ var VideoManager = class {
             overflow: hidden;
         `;
 
-		const playerWidth = 360;
-		const playerHeight = (playerWidth / 4) * 3;
-
-		// add blueprint at the top left
+		// split to left and right
 		{
-			var blueprintContainer = document.createElement("div");
-			blueprintContainer.style = `
+			var leftContainer = document.createElement("div");
+			this.leftContainer = leftContainer;
+			leftContainer.style = `
             position: absolute;
             top: 0;
             left: 0;
-            right: ${playerWidth}px;
+            right: ${this.playerWidth}px;
             bottom: 0;
             overflow: hidden;
         `;
-			blueprintContainer.appendChild(this.blueprint.ui.container);
-			this.container.appendChild(blueprintContainer);
+			this.container.appendChild(leftContainer);
+
+			var rightContainer = document.createElement("div");
+			this.rightContainer = rightContainer;
+			rightContainer.style = `
+			position: absolute;
+			top: 0;
+			right: 0;
+			width: ${this.playerWidth}px;
+			bottom: 0;
+			overflow: hidden;
+		`;
+			this.container.appendChild(rightContainer);
+
+			// thin line between left and right to make it draggable
+			var line = document.createElement("div");
+			line.style = `
+			position: absolute;
+			top: 0;
+			right: ${this.playerWidth}px;
+			width: 5px;
+			height: 100%;
+			background: #000;
+			cursor: col-resize;
+		`;
+			this.container.appendChild(line);
+
+			// make the line draggable
+			var isResizing = false;
+			line.addEventListener("mousedown", (e) => {
+				isResizing = true;
+			});
+			document.addEventListener("mousemove", (e) => {
+				if (isResizing) {
+					line.style.right = `${window.innerWidth - e.clientX - 2}px`;
+					this.updatePlayerWidth(window.innerWidth - e.clientX);
+				}
+			});
+			document.addEventListener("mouseup", (e) => {
+				isResizing = false;
+			});
+		}
+
+		// add blueprint at the top left
+		{
+			leftContainer.appendChild(this.blueprint.ui.container);
 
 			// add reset button at the top right
 			var resetButton = document.createElement("button");
@@ -57,12 +102,12 @@ var VideoManager = class {
 			resetButton.style = `
 				position: absolute;
 				top: 10px;
-				right: ${playerWidth + 10}px;
+				right: 10px;
 			`;
 			resetButton.addEventListener("click", () => {
 				this.resetModulePosition();
 			});
-			document.body.appendChild(resetButton);
+			leftContainer.appendChild(resetButton);
 		}
 
 		// add playlist at the top right
@@ -71,14 +116,13 @@ var VideoManager = class {
 			this.playlistContainer.style = `
             position: absolute;
             top: 0;
-            right: 0;
-            width: ${playerWidth}px;
-            bottom: ${playerHeight}px;
+            width: 100%;
+            bottom: ${this.playerHeight}px;
             overflow: auto;
             background: #333;
             color: white;
         `;
-			this.container.appendChild(this.playlistContainer);
+			this.rightContainer.appendChild(this.playlistContainer);
 		}
 
 		// add video player at the bottom right
@@ -89,11 +133,10 @@ var VideoManager = class {
 			playerContainer.style = `
             position: absolute;
             bottom: 0;
-            right: 0;
-            width: ${playerWidth}px;
-            height: ${playerHeight}px;
+            width: 100%;
+            height: ${this.playerHeight}px;
         `;
-			this.container.appendChild(playerContainer);
+			this.rightContainer.appendChild(playerContainer);
 		}
 
 		// add Save, Copy as URL, Load button at the top left
@@ -140,6 +183,7 @@ var VideoManager = class {
 			document.body.appendChild(copyButton);
 
 			let loadButton = document.createElement("form");
+			this.loadButton = loadButton;
 			loadButton.action = "/action_page.php";
 			loadButton.style = `
 				position: absolute;
@@ -251,7 +295,7 @@ var VideoManager = class {
 			guideContainer.style = `
 				position: absolute;
 				bottom: 10px;
-				right: ${playerWidth + 10}px;
+				right: 10px;
 				z-index: 10;
 				background: #333;
 				padding: 10px;
@@ -265,11 +309,12 @@ var VideoManager = class {
 - Double Click on the video, author, video list to play it`;
 
 			let toggleButton = document.createElement("button");
+			this.toggleButton = toggleButton;
 			toggleButton.innerText = "Hide";
 			toggleButton.style = `
 				position: absolute;
 				bottom: 10px;
-				right: ${playerWidth + 10}px;
+				right: 10px;
 				z-index: 10;
 				margin-top: 10px;
 			`;
@@ -284,9 +329,23 @@ var VideoManager = class {
 			});
 
 			guideContainer.appendChild(guideText);
-			document.body.appendChild(guideContainer);
-			document.body.appendChild(toggleButton);
+			this.leftContainer.appendChild(guideContainer);
+			this.leftContainer.appendChild(toggleButton);
 		}
+	}
+
+	updatePlayerWidth(width) {
+		this.playerWidth = width;
+		this.playerHeight = (this.playerWidth / 4) * 3;
+
+		this.leftContainer.style.right = `${this.playerWidth}px`;
+		this.rightContainer.style.width = `${this.playerWidth}px`;
+
+		this.playlistContainer.style.width = `${this.playerWidth}px`;
+		this.playlistContainer.style.bottom = `${this.playerHeight}px`;
+
+		document.getElementById("player").style.width = `${this.playerWidth}px`;
+		document.getElementById("player").style.height = `${this.playerHeight}px`;
 	}
 
 	extractVideoIds(url) {
