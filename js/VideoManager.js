@@ -16,6 +16,11 @@ var VideoManager = class {
 		// Video manager specific components
 		this.playlist = [];
 		this.initUI();
+
+		// check if the URL contains information
+		if (window.location.search) {
+			this.loadURL(window.location.search);
+		}
 	}
 
 	initUI() {
@@ -91,7 +96,7 @@ var VideoManager = class {
 			this.container.appendChild(playerContainer);
 		}
 
-		// add Save Load button at the top left
+		// add Save, Copy as URL, Load button at the top left
 		{
 			let saveButton = document.createElement("button");
 			saveButton.innerText = "Save";
@@ -115,12 +120,31 @@ var VideoManager = class {
 			});
 			document.body.appendChild(saveButton);
 
+			let copyButton = document.createElement("button");
+			copyButton.innerText = "Copy as URL";
+			copyButton.style = `
+			position: absolute;
+			top: 10px;
+			left: 60px;
+		`;
+			copyButton.addEventListener("click", () => {
+				let url = window.location.origin + window.location.pathname + "?" + this.encode2URL();
+				if (url.length > 2000) {
+					alert("URL is too long to copy");
+				} else {
+					navigator.clipboard.writeText(url);
+
+					alert("URL copied to clipboard");
+				}
+			});
+			document.body.appendChild(copyButton);
+
 			let loadButton = document.createElement("form");
 			loadButton.action = "/action_page.php";
 			loadButton.style = `
 				position: absolute;
 				top: 10px;
-				left: 60px;
+				left: 160px;
 			`;
 
 			let fileInput = document.createElement("input");
@@ -335,6 +359,139 @@ var VideoManager = class {
 		return module;
 	}
 
+	encode2URL() {
+		// reserve v: video, a: author, l: video list
+		const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZbcdefghijkmnopqrstuwxyz";
+		const base = chars.length;
+		const num2str = (num) => {
+			var result = "";
+			while (num > 0) {
+				result = chars[num % base] + result;
+				num = Math.floor(num / base);
+			}
+			return result.length === 0 ? "0" : result;
+		};
+
+		var result = "";
+
+		var videos = {};
+		var authors = {};
+		var videoLists = {};
+		this.blueprint.get_modules("Video").forEach((module, index) => {
+			result += `v${module.videoId}`;
+			videos[module.videoId] = index;
+
+			if (!(module.author in authors)) {
+				authors[module.author] = Object.keys(authors).length;
+			}
+		});
+
+		this.blueprint.get_modules("VideoList").forEach((module, index) => {
+			videoLists[module.title] = index;
+		});
+
+		console.log(videos);
+		console.log(authors);
+
+		console.log("Start video list");
+		for (let module of this.blueprint.get_modules("VideoList")) {
+			console.log(module.title);
+			result += `l`;
+
+			for (let data of module.get_data()) {
+				console.log(data);
+				if (data.name === "Video") {
+					result += `v${num2str(videos[data.videoId])}`;
+				} else if (data.name === "Author") {
+					result += `a${num2str(authors[data.author])}`;
+				} else if (data.name === "VideoList") {
+					result += `l${num2str(videoLists[data.title])}`;
+				}
+			}
+			result += `-`;
+		}
+
+		return result;
+	}
+
+	async loadURL(url) {
+		this.blueprint.clear();
+
+		// remove char until ?
+		url = url.slice(url.indexOf("?") + 1);
+
+		const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZbcdefghijkmnopqrstuwxyz";
+		const base = chars.length;
+		const str2num = (str) => {
+			var result = 0;
+			for (let i = 0; i < str.length; i++) {
+				result = result * base + chars.indexOf(str[i]);
+			}
+			return result;
+		};
+
+		var videos = [];
+		var authors = [];
+		var videoLists = [];
+
+		var state = 0; // 0: video, 1: video list, 2: reading video list
+		var currentVideoList = null;
+		var currentData = null;
+
+		for (let index = 0; index < url.length; index++) {
+			let c = url[index];
+			if (state === 0) {
+				if (c === "v") {
+					let videoId = url.slice(index + 1, index + 12);
+					videos.push(videoId);
+					let module = this.addVideoModule(videoId);
+					await module.preparePromise;
+
+					if (!authors.includes(module.author)) {
+						authors.push(module.author);
+					}
+
+					index += 11;
+				} else if (c === "l") {
+					state = 2;
+					currentVideoList = [];
+				}
+			} else if (state === 1) {
+				if (c === "l") {
+					state = 2;
+					currentVideoList = [];
+				}
+			} else if (state === 2) {
+				if (c === "v" || c === "a" || c === "l") {
+					currentData = "";
+					index++;
+					while (url[index] !== "-" && url[index] !== "v" && url[index] !== "a" && url[index] !== "l") {
+						currentData += url[index];
+						index++;
+					}
+					if (c === "v") currentVideoList.push({ name: "Video", videoId: videos[str2num(currentData)] });
+					else if (c === "a") currentVideoList.push({ name: "Author", author: authors[str2num(currentData)] });
+					else if (c === "l") currentVideoList.push({ name: "VideoList", title: "" + str2num(currentData) });
+
+					index--;
+				} else if (c === "-") {
+					state = 1;
+					this.createVideoListModule(videoLists.length);
+					videoLists.push(currentVideoList);
+				}
+			}
+		}
+
+		let videoListModules = this.blueprint.get_modules("VideoList");
+		videoLists.forEach((videoList, index) => {
+			videoListModules[index].set_data(videoList);
+		});
+
+		this.resetModulePosition();
+
+		return true;
+	}
+
 	save() {
 		// data
 		var saveData = {
@@ -403,10 +560,13 @@ var VideoManager = class {
 			let videoListModule = this.createVideoListModule(videoList.title);
 			videoListModule.ui.container.style.left = videoList.left;
 			videoListModule.ui.container.style.top = videoList.top;
-			videoListModule.set_data(videoList.list);
 
 			mostLeft = Math.min(mostLeft, parseInt(videoList.left, 10));
 			mostTop = Math.min(mostTop, parseInt(videoList.top, 10));
+		}
+		for (let videoList of saveData.videoLists) {
+			let videoListModule = this.blueprint.get_modules("VideoList").find((module) => module.title === videoList.title);
+			videoListModule.set_data(videoList.list);
 		}
 
 		// reset blueprint positions
