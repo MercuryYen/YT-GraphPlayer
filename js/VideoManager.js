@@ -520,6 +520,8 @@ var VideoManager = class {
 				if (c === "l") {
 					state = 2;
 					currentVideoList = [];
+				} else if (c === "&") {
+					break;
 				}
 			} else if (state === 2) {
 				if (c === "v" || c === "a" || c === "l") {
