@@ -513,14 +513,14 @@ var VideoManager = class {
 				} else if (c === "l") {
 					state = 2;
 					currentVideoList = [];
-				} else if (c === "&") {
+				} else {
 					break;
 				}
 			} else if (state === 1) {
 				if (c === "l") {
 					state = 2;
 					currentVideoList = [];
-				} else if (c === "&") {
+				} else {
 					break;
 				}
 			} else if (state === 2) {
@@ -540,6 +540,8 @@ var VideoManager = class {
 					state = 1;
 					this.createVideoListModule("" + videoLists.length);
 					videoLists.push(currentVideoList);
+				} else {
+					break;
 				}
 			}
 		}
