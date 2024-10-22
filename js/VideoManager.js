@@ -12,6 +12,7 @@ var VideoManager = class {
 
 		this.playlistContainer = null;
 		this.player = null;
+		this.currentPlayingModule = null;
 
 		// Video manager specific components
 		this.playlist = [];
@@ -469,6 +470,20 @@ var VideoManager = class {
 			result += `-`;
 		}
 
+		if (this.currentPlayingModule) {
+			result += `d`;
+
+			if (this.currentPlayingModule instanceof Module["Video"]) {
+				result += `v${num2str(videos[this.currentPlayingModule.videoId])}`;
+			} else if (this.currentPlayingModule instanceof Module["Author"]) {
+				result += `a${num2str(authors[this.currentPlayingModule.author])}`;
+			} else if (this.currentPlayingModule instanceof Module["VideoList"]) {
+				result += `l${num2str(videoLists[this.currentPlayingModule.title])}`;
+			}
+
+			result += `-`;
+		}
+
 		return result;
 	}
 
@@ -492,9 +507,11 @@ var VideoManager = class {
 		var authors = [];
 		var videoLists = [];
 
-		var state = 0; // 0: video, 1: video list, 2: reading video list
+		var state = 0; // 0: video, 1: video list, 2: reading video list, 3: select default playing module
 		var currentVideoList = null;
 		var currentData = null;
+
+		var waitingModuleToPlay = null;
 
 		for (let index = 0; index < url.length; index++) {
 			let c = url[index];
@@ -520,6 +537,8 @@ var VideoManager = class {
 				if (c === "l") {
 					state = 2;
 					currentVideoList = [];
+				} else if (c === "d") {
+					state = 3;
 				} else {
 					break;
 				}
@@ -543,6 +562,30 @@ var VideoManager = class {
 				} else {
 					break;
 				}
+			} else if (state === 3) {
+				currentData = "";
+				index++;
+				while (url[index] !== "-" && url[index] !== "&" && index < url.length) {
+					currentData += url[index];
+					index++;
+				}
+
+				let moduleIndex = str2num(currentData);
+				if (c === "v") {
+					if (moduleIndex < viddeos.length) {
+						waitingModuleToPlay = this.blueprint.get_modules("Video")[moduleIndex];
+					}
+				} else if (c === "a") {
+					if (moduleIndex < authors.length) {
+						waitingModuleToPlay = this.blueprint.get_modules("Author")[moduleIndex];
+					}
+				} else if (c === "l") {
+					if (moduleIndex < videoLists.length) {
+						waitingModuleToPlay = this.blueprint.get_modules("VideoList")[moduleIndex];
+					}
+				}
+
+				break;
 			}
 		}
 
@@ -550,6 +593,10 @@ var VideoManager = class {
 		videoLists.forEach((videoList, index) => {
 			videoListModules[index].set_data(videoList);
 		});
+
+		if (waitingModuleToPlay) {
+			this.playModule(waitingModuleToPlay);
+		}
 
 		this.resetModulePosition();
 
@@ -643,6 +690,9 @@ var VideoManager = class {
 	playModule(module, index = 0) {
 		console.log("Play module");
 		console.log(module);
+
+		this.currentPlayingModule = module;
+
 		this.nowIndex = index;
 		if (module instanceof Module["Video"]) {
 			this.playlist = [module];
