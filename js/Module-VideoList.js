@@ -81,7 +81,7 @@ Module["VideoList"] = class VideoList extends Module["Module"] {
                     align-items: center;
                     padding: 10px;
                     border-bottom: 1px solid #333;
-                    cursor: pointer;
+                    cursor: not-allowed;
                     border-style: double;
                     border-radius: 8px;
                     border-width: 1px;
