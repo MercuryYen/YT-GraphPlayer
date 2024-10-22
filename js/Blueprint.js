@@ -65,11 +65,11 @@ var Blueprint = class {
 			};
 			return function (e) {
 				if (type == "mouse") {
-					board.style.left = origin.x + e.clientX - pivotX + "px";
-					board.style.top = origin.y + e.clientY - pivotY + "px";
+					board.style.left = origin.x + (e.clientX - pivotX) / board.scale + "px";
+					board.style.top = origin.y + (e.clientY - pivotY) / board.scale + "px";
 				} else if (type == "touch") {
-					board.style.left = origin.x + e.touches[0].clientX - pivotX + "px";
-					board.style.top = origin.y + e.touches[0].clientY - pivotY + "px";
+					board.style.left = origin.x + (e.touches[0].clientX - pivotX) / board.scale + "px";
+					board.style.top = origin.y + (e.touches[0].clientY - pivotY) / board.scale + "px";
 				}
 			};
 		};
@@ -120,11 +120,25 @@ var Blueprint = class {
 		{
 			this.ui.container.addEventListener("wheel", function (e) {
 				e.preventDefault();
+				let relativeScale = 1;
 				if (e.deltaY < 0) {
-					board.scale = board.scale * 1.1;
+					relativeScale = 1.1;
 				} else {
-					board.scale = board.scale / 1.1;
+					relativeScale = 1 / 1.1;
 				}
+				let left = parseFloat(board.style.left.substr(0, board.style.left.length - 2));
+				let top = parseFloat(board.style.top.substr(0, board.style.top.length - 2));
+
+				left *= board.scale;
+				top *= board.scale;
+
+				let diffX = e.clientX - left;
+				let diffY = e.clientY - top;
+
+				board.scale *= relativeScale;
+				board.style.left = (e.clientX - diffX * relativeScale) / board.scale + "px";
+				board.style.top = (e.clientY - diffY * relativeScale) / board.scale + "px";
+
 				board.style.zoom = board.scale;
 			});
 		}

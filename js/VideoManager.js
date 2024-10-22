@@ -672,7 +672,7 @@ var VideoManager = class {
 
 	resetModulePosition() {
 		this.blueprint.ui.board.style.left = "0px";
-		this.blueprint.ui.board.style.top = "0px";
+		this.blueprint.ui.board.style.top = `0px`;
 
 		let finalY = 100;
 		this.blueprint.get_modules("Author").forEach((module, index) => {
@@ -693,8 +693,10 @@ var VideoManager = class {
 			});
 			finalY += 180 * Math.min(module.songModules.length, 5);
 		});
+		if (this.blueprint.get_modules("VideoList").length > 0) this.blueprint.ui.board.style.top = `${-finalY}px`;
 
 		finalY += 200;
+
 		this.blueprint.get_modules("VideoList").forEach((module, index) => {
 			module.ui.container.style.left = "80px";
 			module.ui.container.style.top = `${finalY + index * 200}px`;

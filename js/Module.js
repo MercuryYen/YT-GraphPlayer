@@ -186,11 +186,11 @@ Module["Module"] = class {
 					container.style.top = origin.y + "px";
 				} else {
 					if (type == "mouse") {
-						container.style.left = origin.x + e.clientX - pivotX + "px";
-						container.style.top = origin.y + e.clientY - pivotY + "px";
+						container.style.left = origin.x + (e.clientX - pivotX) / blueprint.ui.board.scale + "px";
+						container.style.top = origin.y + (e.clientY - pivotY) / blueprint.ui.board.scale + "px";
 					} else if (type == "touch") {
-						container.style.left = origin.x + e.touches[0].clientX - pivotX + "px";
-						container.style.top = origin.y + e.touches[0].clientY - pivotY + "px";
+						container.style.left = origin.x + (e.touches[0].clientX - pivotX) / blueprint.ui.board.scale + "px";
+						container.style.top = origin.y + (e.touches[0].clientY - pivotY) / blueprint.ui.board.scale + "px";
 					}
 				}
 			};
