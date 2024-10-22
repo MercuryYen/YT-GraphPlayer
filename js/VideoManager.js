@@ -523,7 +523,7 @@ var VideoManager = class {
 				if (c === "v" || c === "a" || c === "l") {
 					currentData = "";
 					index++;
-					while (url[index] !== "-" && url[index] !== "v" && url[index] !== "a" && url[index] !== "l") {
+					while (url[index] !== "-" && url[index] !== "v" && url[index] !== "a" && url[index] !== "l" && url[index] !== "&" && index < url.length) {
 						currentData += url[index];
 						index++;
 					}
@@ -536,6 +536,8 @@ var VideoManager = class {
 					state = 1;
 					this.createVideoListModule("" + videoLists.length);
 					videoLists.push(currentVideoList);
+				} else if (c === "&") {
+					break;
 				}
 			}
 		}
