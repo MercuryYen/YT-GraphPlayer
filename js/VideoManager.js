@@ -308,6 +308,10 @@ var VideoManager = class {
 - Click on the sort button to reset the positions
 - Double Click on the video, author, video list to play it`;
 
+			let projectLink = document.createElement("div");
+			projectLink.innerHTML = `<a href="https://github.com/MercuryYen/YT-GraphPlayer" target="_blank">- Project Link</a>`;
+			projectLink.style = "color: white;";
+
 			let toggleButton = document.createElement("button");
 			this.toggleButton = toggleButton;
 			toggleButton.innerText = "Hide";
@@ -329,6 +333,7 @@ var VideoManager = class {
 			});
 
 			guideContainer.appendChild(guideText);
+			guideContainer.appendChild(projectLink);
 			this.leftContainer.appendChild(guideContainer);
 			this.leftContainer.appendChild(toggleButton);
 		}
