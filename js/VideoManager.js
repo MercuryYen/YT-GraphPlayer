@@ -470,7 +470,7 @@ var VideoManager = class {
 			result += `-`;
 		}
 
-		if (this.currentPlayingModule) {
+		if (this.currentPlayingModule !== null) {
 			result += `d`;
 
 			if (this.currentPlayingModule instanceof Module["Video"]) {
@@ -594,7 +594,7 @@ var VideoManager = class {
 			videoListModules[index].set_data(videoList);
 		});
 
-		if (waitingModuleToPlay) {
+		if (waitingModuleToPlay !== null) {
 			this.playModule(waitingModuleToPlay);
 		}
 
