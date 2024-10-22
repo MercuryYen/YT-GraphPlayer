@@ -534,7 +534,7 @@ var VideoManager = class {
 					index--;
 				} else if (c === "-") {
 					state = 1;
-					this.createVideoListModule(videoLists.length);
+					this.createVideoListModule("" + videoLists.length);
 					videoLists.push(currentVideoList);
 				}
 			}

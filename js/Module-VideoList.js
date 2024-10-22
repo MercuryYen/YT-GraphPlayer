@@ -161,7 +161,7 @@ Module["VideoList"] = class VideoList extends Module["Module"] {
 			} else if (module instanceof Module["Author"]) {
 				refData.author = module.author;
 			} else if (module instanceof Module["VideoList"]) {
-				refData.modules = module.title;
+				refData.title = module.title;
 			}
 			data.push(refData);
 		}
@@ -185,8 +185,8 @@ Module["VideoList"] = class VideoList extends Module["Module"] {
 				if (authorModule) {
 					this.modules.push(authorModule);
 				}
-			} else if (refData.modules) {
-				let videoListModule = videoListModules.find((module) => module.title === refData.modules);
+			} else if (refData.title) {
+				let videoListModule = videoListModules.find((module) => module.title === refData.title);
 				if (videoListModule) {
 					this.modules.push(videoListModule);
 				}
