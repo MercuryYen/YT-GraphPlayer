@@ -175,17 +175,17 @@ Module["VideoList"] = class VideoList extends Module["Module"] {
 		var videoListModules = this.blueprint.get_modules("VideoList");
 
 		for (let refData of data) {
-			if (refData.videoId) {
+			if (refData.videoId !== undefined) {
 				let videoModule = videoModules.find((module) => module.videoId === refData.videoId);
 				if (videoModule) {
 					this.modules.push(videoModule);
 				}
-			} else if (refData.author) {
+			} else if (refData.author !== undefined) {
 				let authorModule = authorModules.find((module) => module.author === refData.author);
 				if (authorModule) {
 					this.modules.push(authorModule);
 				}
-			} else if (refData.title) {
+			} else if (refData.title !== undefined) {
 				let videoListModule = videoListModules.find((module) => module.title === refData.title);
 				if (videoListModule) {
 					this.modules.push(videoListModule);
