@@ -92,7 +92,15 @@ Module["VideoList"] = class VideoList extends Module["Module"] {
 				// Delete this when long mousedown
 				target.addEventListener("mousedown", (e) => {
 					e.stopPropagation();
-					if (confirm("Delete this module?"))
+					let shortName = "";
+					if (module instanceof Module["Video"]) {
+						shortName = module.title;
+					} else if (module instanceof Module["Author"]) {
+						shortName = module.author;
+					} else if (module instanceof Module["VideoList"]) {
+						shortName = module.title;
+					}
+					if (confirm(`Delete ${shortName} in ${this.title}?`))
 						if (this.modules.includes(module)) {
 							this.modules.splice(this.modules.indexOf(module), 1);
 							this.updateUI();
