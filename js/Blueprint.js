@@ -34,6 +34,7 @@ var Blueprint = class {
         background: #666666;
         background-repeat: repeat;
         overflow: hidden;
+		overscroll-behavior: none;
         z-index: 0;
         `;
 
@@ -46,6 +47,7 @@ var Blueprint = class {
         left: 0px;
         width: 99999px;
         height: 99999px;
+		overscroll-behavior: none;
 		zoom: 1;
         `;
 		// Issue: if module exists on the outer-right side of the board, then wrapping will occur on the
