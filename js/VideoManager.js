@@ -572,7 +572,7 @@ var VideoManager = class {
 
 				let moduleIndex = str2num(currentData);
 				if (c === "v") {
-					if (moduleIndex < viddeos.length) {
+					if (moduleIndex < videos.length) {
 						waitingModuleToPlay = this.blueprint.get_modules("Video")[moduleIndex];
 					}
 				} else if (c === "a") {
