@@ -85,6 +85,20 @@ Module["Author"] = class Author extends Module["Module"] {
 	getSummary() {
 		return this.author;
 	}
+
+	getPlayList() {
+		var playlist = [];
+		for (let module of this.songModules) {
+			playlist.push(module.videoId);
+		}
+
+		for (let i = playlist.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[playlist[i], playlist[j]] = [playlist[j], playlist[i]];
+		}
+
+		return playlist;
+	}
 };
 
 // Module["Provider"] = class Provider extends Module["Module"] {

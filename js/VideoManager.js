@@ -698,7 +698,7 @@ var VideoManager = class {
 			this.playlist = [module];
 			this.player.load(module.videoId);
 		} else if (module instanceof Module["Author"]) {
-			this.playlist = module.songModules;
+			this.playlist = module.getPlaylist();
 			this.player.load(this.playlist[index].videoId);
 		} else if (module instanceof Module["VideoList"]) {
 			this.playlist = module.getPlaylist();
