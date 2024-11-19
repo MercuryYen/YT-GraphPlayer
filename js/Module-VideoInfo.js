@@ -86,10 +86,10 @@ Module["Author"] = class Author extends Module["Module"] {
 		return this.author;
 	}
 
-	getPlayList() {
+	getPlaylist() {
 		var playlist = [];
 		for (let module of this.songModules) {
-			playlist.push(module.videoId);
+			playlist.push(module);
 		}
 
 		for (let i = playlist.length - 1; i > 0; i--) {
