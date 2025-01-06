@@ -212,13 +212,8 @@ Module["Module"] = class {
 						window.addEventListener("mousemove", container.dragMethod);
 						blueprint.currentModule = thisModule;
 					}
-				} else if (e.button == 1) {
-					// duplicate
-					let otherModule = blueprint.duplicate_module(thisModule);
-					otherModule.ui.container.style.left = parseFloat(container.style.left) + 20 + "px";
-					otherModule.ui.container.style.top = parseFloat(container.style.top) + 20 + "px";
+					e.stopPropagation();
 				}
-				e.stopPropagation();
 			},
 			false
 		);
@@ -557,10 +552,6 @@ Module["Module"] = class {
 
 	getSummary() {
 		return null;
-	}
-
-	copyTo(module) {
-		module.set_data(this.get_data());
 	}
 
 	showOutput(text) {

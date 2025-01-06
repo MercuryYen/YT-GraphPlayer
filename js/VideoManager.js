@@ -420,6 +420,23 @@ var VideoManager = class {
 					module.waiting = false;
 				}, 600);
 			});
+
+			module.ui.container.addEventListener("mousedown", (e) => {
+				if (e.button == 1) {
+					var num = 1;
+					var allPossibleTitles = this.blueprint.get_modules("VideoList").map((module) => module.title);
+					while (allPossibleTitles.includes(this.title + " (" + num + ")")) {
+						num++;
+					}
+					let otherModule = this.createVideoListModule(module.title + " (" + num + ")");
+					otherModule.set_data(module.get_data());
+					otherModule.title = module.title + " (" + num + ")";
+
+					otherModule.updateUI();
+					otherModule.ui.container.style.left = parseFloat(module.ui.container.style.left) + 20 + "px";
+					otherModule.ui.container.style.top = parseFloat(module.ui.container.style.top) + 20 + "px";
+				}
+			});
 		}
 		return module;
 	}
