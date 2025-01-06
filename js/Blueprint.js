@@ -380,6 +380,19 @@ var Blueprint = class {
 		});
 	}
 
+	duplicate_module(module) {
+		// create module
+		var newModule = new Module[module.constructor.name](...module.get_args().concat([this]));
+		newModule.set_data(module.get_data());
+		newModule.updateUI();
+
+		// add module to blueprint
+		this.modules.push(newModule); // data
+		this.ui.board.appendChild(newModule.ui.container); // ui
+
+		return newModule;
+	}
+
 	clear() {
 		this.modules.forEach(
 			function (module) {
